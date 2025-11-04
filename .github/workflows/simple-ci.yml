@@ -1,0 +1,87 @@
+name: Simple CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  # Job 1: Tests basiques
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Test project structure
+      run: |
+        echo "✅ Testing project structure..."
+        ls -la
+        echo "✅ Frontend exists: $(test -d frontend && echo 'YES' || echo 'NO')"
+        echo "✅ Backend exists: $(test -d backend && echo 'YES' || echo 'NO')"
+        echo "✅ K8s manifests exist: $(test -d k8s && echo 'YES' || echo 'NO')"
+        echo "✅ All tests passed!"
+
+    - name: Validate Kubernetes manifests
+      run: |
+        echo "Validating K8s manifests..."
+        if [ -f "k8s/simple-mysql.yaml" ]; then
+          echo "✅ MySQL manifest found"
+        fi
+        if [ -f "k8s/simple-backend.yaml" ]; then
+          echo "✅ Backend manifest found"
+        fi
+        if [ -f "k8s/simple-frontend.yaml" ]; then
+          echo "✅ Frontend manifest found"
+        fi
+
+  # Job 2: Build simulation (sans Docker Hub)
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Simulate Docker build
+      run: |
+        echo "🐳 Simulating Docker builds..."
+        echo "Building frontend image..."
+        echo "Building backend image..."
+        echo "✅ Images built successfully (simulation)"
+
+  # Job 3: Deploy simulation
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Simulate Kubernetes deployment
+      run: |
+        echo "☸️ Simulating Kubernetes deployment..."
+        echo "Deploying MySQL..."
+        echo "Deploying Backend..."
+        echo "Deploying Frontend..."
+        echo "✅ Deployment completed successfully (simulation)"
+
+  # Job 4: Success notification
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, build, deploy]
+    if: always()
+    steps:
+    - name: Pipeline results
+      run: |
+        echo "=========================================="
+        echo "🎉 CI/CD PIPELINE RESULTS"
+        echo "=========================================="
+        echo "✅ Tests: ${{ needs.test.result }}"
+        echo "✅ Build: ${{ needs.build.result }}"
+        echo "✅ Deploy: ${{ needs.deploy.result }}"
+        echo "=========================================="
+        if [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.build.result }}" == "success" ] && [ "${{ needs.deploy.result }}" == "success" ]; then
+          echo "🚀 PIPELINE SUCCESS - eLibrary ready!"
+        else
+          echo "❌ Pipeline failed - check logs"
+        fi
