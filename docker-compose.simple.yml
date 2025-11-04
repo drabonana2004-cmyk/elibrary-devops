@@ -1,0 +1,19 @@
+services:
+  # Base de données MySQL uniquement
+  mysql:
+    image: mysql:8.0
+    container_name: elibrary-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: elibrary
+      MYSQL_ROOT_PASSWORD: secretpassword
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    restart: unless-stopped
+
+volumes:
+  mysql_data:

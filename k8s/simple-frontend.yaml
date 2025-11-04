@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: elibrary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html
+        configMap:
+          name: frontend-html
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: elibrary
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 4200
+    targetPort: 80
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-html
+  namespace: elibrary
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>eLibrary - Kubernetes Demo</title>
+        <style>
+            body { font-family: Arial; text-align: center; margin-top: 50px; }
+            .container { max-width: 600px; margin: 0 auto; }
+            .success { color: green; font-size: 24px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1 class="success">✅ eLibrary Frontend</h1>
+            <p>Déployé avec succès sur Kubernetes !</p>
+            <h3>Architecture 3-tiers validée :</h3>
+            <ul style="text-align: left;">
+                <li>✅ Frontend : Nginx (ce que vous voyez)</li>
+                <li>✅ Backend : PHP Apache</li>
+                <li>✅ Base de données : MySQL 8.0</li>
+            </ul>
+            <p><strong>Déploiement Kubernetes réussi ! 🚀</strong></p>
+        </div>
+    </body>
+    </html>

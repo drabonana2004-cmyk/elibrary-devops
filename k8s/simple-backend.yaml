@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: elibrary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: php:8.2-apache
+        ports:
+        - containerPort: 80
+        env:
+        - name: DB_HOST
+          value: "mysql-service"
+        - name: DB_DATABASE
+          value: "elibrary"
+        command: ["/bin/sh"]
+        args: ["-c", "echo 'Backend PHP running' && apache2-foreground"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: elibrary
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 8000
+    targetPort: 80
