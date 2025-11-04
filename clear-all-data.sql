@@ -1,0 +1,15 @@
+USE elibrary;
+
+SET FOREIGN_KEY_CHECKS = 0;
+DELETE FROM loans;
+DELETE FROM books;
+DELETE FROM categories;
+DELETE FROM users;
+SET FOREIGN_KEY_CHECKS = 1;
+
+ALTER TABLE loans AUTO_INCREMENT = 1;
+ALTER TABLE books AUTO_INCREMENT = 1;
+ALTER TABLE categories AUTO_INCREMENT = 1;
+ALTER TABLE users AUTO_INCREMENT = 1;
+
+SELECT 'Base de donnees videe completement!' as message;

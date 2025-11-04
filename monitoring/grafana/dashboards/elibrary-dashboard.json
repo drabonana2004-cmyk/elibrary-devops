@@ -1,0 +1,176 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "eLibrary - Production Monitoring",
+    "tags": ["elibrary", "production", "devops"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"backend\"}",
+            "legendFormat": "Backend Status",
+            "refId": "A"
+          },
+          {
+            "expr": "up{job=\"frontend\"}",
+            "legendFormat": "Frontend Status",
+            "refId": "B"
+          },
+          {
+            "expr": "up{job=\"mysql\"}",
+            "legendFormat": "Database Status",
+            "refId": "C"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "HTTP Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{method}} {{status}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "yAxes": [
+          {"label": "Requests/sec", "min": 0},
+          {"show": false}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes{pod=~\".*elibrary.*\"}/1024/1024",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "yAxes": [
+          {"label": "Memory (MB)", "min": 0},
+          {"show": false}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "CPU Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{pod=~\".*elibrary.*\"}[5m])*100",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "yAxes": [
+          {"label": "CPU %", "min": 0, "max": 100},
+          {"show": false}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Database Connections",
+        "type": "singlestat",
+        "targets": [
+          {
+            "expr": "mysql_global_status_threads_connected",
+            "legendFormat": "Active Connections",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 16}
+      },
+      {
+        "id": 6,
+        "title": "Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 6, "y": 16},
+        "yAxes": [
+          {"label": "Response Time (s)", "min": 0},
+          {"show": false}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+            "legendFormat": "5xx Errors",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(http_requests_total{status=~\"4..\"}[5m])",
+            "legendFormat": "4xx Errors",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+        "yAxes": [
+          {"label": "Errors/sec", "min": 0},
+          {"show": false}
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Kubernetes Pod Status",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "kube_pod_status_phase{namespace=\"elibrary\"}",
+            "legendFormat": "{{pod}} - {{phase}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      }
+    ],
+    "time": {"from": "now-1h", "to": "now"},
+    "refresh": "5s",
+    "schemaVersion": 27,
+    "version": 1,
+    "links": [
+      {
+        "title": "Prometheus",
+        "url": "http://prometheus:9090",
+        "type": "link"
+      }
+    ]
+  }
+}

@@ -1,0 +1,174 @@
+{
+    "books": [
+        {
+            "id": 1,
+            "title": "Le Petit Prince",
+            "author": "Antoine de Saint-Exup\u00e9ry",
+            "isbn": "9782070408504",
+            "category_id": 1,
+            "quantity": 5,
+            "available_quantity": 5,
+            "description": "Un conte po\u00e9tique et philosophique sous l'apparence d'un conte pour enfants."
+        },
+        {
+            "id": 2,
+            "title": "Dune",
+            "author": "Frank Herbert",
+            "isbn": "9782266320580",
+            "category_id": 2,
+            "quantity": 3,
+            "available_quantity": 3,
+            "description": "Une \u00e9pop\u00e9e de science-fiction dans un univers d\u00e9sertique lointain."
+        },
+        {
+            "id": 3,
+            "title": "L'Histoire de France",
+            "author": "Ernest Lavisse",
+            "isbn": "9782253906827",
+            "category_id": 3,
+            "quantity": 4,
+            "available_quantity": 4,
+            "description": "Une histoire compl\u00e8te de la France des origines \u00e0 nos jours."
+        },
+        {
+            "id": 4,
+            "title": "M\u00e9ditations m\u00e9taphysiques",
+            "author": "Ren\u00e9 Descartes",
+            "isbn": "9782080706270",
+            "category_id": 4,
+            "quantity": 2,
+            "available_quantity": 2,
+            "description": "Les fondements de la philosophie moderne par Descartes."
+        },
+        {
+            "id": 5,
+            "title": "Clean Code",
+            "author": "Robert C. Martin",
+            "isbn": "9780132350884",
+            "category_id": 5,
+            "quantity": 6,
+            "available_quantity": 6,
+            "description": "Guide pour \u00e9crire du code propre et maintenable."
+        },
+        {
+            "id": 6,
+            "title": "Orgueil et Pr\u00e9jug\u00e9s",
+            "author": "Jane Austen",
+            "isbn": "9782253004226",
+            "category_id": 6,
+            "quantity": 4,
+            "available_quantity": 4,
+            "description": "Un classique de la litt\u00e9rature romantique anglaise."
+        },
+        {
+            "id": 7,
+            "title": "Da Vinci Code",
+            "author": "Dan Brown",
+            "isbn": "9782253121251",
+            "category_id": 7,
+            "quantity": 5,
+            "available_quantity": 5,
+            "description": "Un thriller captivant m\u00ealant art, histoire et myst\u00e8re."
+        },
+        {
+            "id": 8,
+            "title": "Steve Jobs",
+            "author": "Walter Isaacson",
+            "isbn": "9782709638326",
+            "category_id": 8,
+            "quantity": 3,
+            "available_quantity": 3,
+            "description": "La biographie officielle du fondateur d'Apple."
+        },
+        {
+            "id": 9,
+            "title": "Harry Potter \u00e0 l'\u00e9cole des sorciers",
+            "author": "J.K. Rowling",
+            "isbn": "9782070541270",
+            "category_id": 9,
+            "quantity": 8,
+            "available_quantity": 8,
+            "description": "Le premier tome de la saga du jeune sorcier."
+        },
+        {
+            "id": 10,
+            "title": "Sapiens",
+            "author": "Yuval Noah Harari",
+            "isbn": "9782226257017",
+            "category_id": 10,
+            "quantity": 4,
+            "available_quantity": 4,
+            "description": "Une br\u00e8ve histoire de l'humanit\u00e9."
+        },
+        {
+            "id": 11,
+            "title": "1984",
+            "author": "George Orwell",
+            "isbn": "9782070368228",
+            "category_id": 1,
+            "quantity": 6,
+            "available_quantity": 6,
+            "description": "Un roman dystopique sur la surveillance et le totalitarisme."
+        },
+        {
+            "id": 12,
+            "title": "Fondation",
+            "author": "Isaac Asimov",
+            "isbn": "9782070360260",
+            "category_id": 2,
+            "quantity": 3,
+            "available_quantity": 3,
+            "description": "Le premier tome du cycle de Fondation."
+        },
+        {
+            "id": 13,
+            "title": "Les Mis\u00e9rables",
+            "author": "Victor Hugo",
+            "isbn": "9782253096337",
+            "category_id": 1,
+            "quantity": 4,
+            "available_quantity": 2,
+            "description": "Le chef-d'\u0153uvre de Victor Hugo sur la France du XIXe si\u00e8cle."
+        },
+        {
+            "id": 14,
+            "title": "Algorithmes",
+            "author": "Thomas H. Cormen",
+            "isbn": "9782100545261",
+            "category_id": 5,
+            "quantity": 2,
+            "available_quantity": 2,
+            "description": "Introduction aux algorithmes et structures de donn\u00e9es."
+        },
+        {
+            "id": 15,
+            "title": "Gone Girl",
+            "author": "Gillian Flynn",
+            "isbn": "9782253183457",
+            "category_id": 7,
+            "quantity": 3,
+            "available_quantity": 3,
+            "description": "Un thriller psychologique sur un couple en crise."
+        }
+    ],
+    "loans": [
+        {
+            "id": 1,
+            "user_id": 1,
+            "book_id": 13,
+            "loan_date": "2025-11-03 15:40:12",
+            "due_date": "2025-11-17 15:40:12",
+            "return_date": null,
+            "status": "active"
+        },
+        {
+            "id": 2,
+            "user_id": 1,
+            "book_id": 13,
+            "loan_date": "2025-11-03 15:42:54",
+            "due_date": "2025-11-17 15:42:54",
+            "return_date": null,
+            "status": "active"
+        }
+    ]
+}
