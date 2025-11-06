@@ -1,0 +1,243 @@
+.dashboard-container {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.header {
+  background: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2563eb;
+}
+
+.nav {
+  display: flex;
+  gap: 2rem;
+}
+
+.nav a {
+  text-decoration: none;
+  color: #666;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.nav a.active, .nav a:hover {
+  background: #2563eb;
+  color: white;
+}
+
+.notification-link {
+  position: relative;
+}
+
+.badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.badge-certified {
+  background: #10b981;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+}
+
+.notifications-section {
+  background: white;
+  margin: 1rem 2rem;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-left: 4px solid #10b981;
+  background: #f0fdf4;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.notification-item.unread {
+  background: #dbeafe;
+  border-left-color: #2563eb;
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+}
+
+.main-content {
+  padding: 2rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.page-header p {
+  color: #6b7280;
+  margin: 0.5rem 0 2rem 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 8px;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  color: #6b7280;
+  margin-bottom: 2rem;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.loans-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.loan-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.loan-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+}
+
+.loan-info p {
+  margin: 0 0 0.5rem 0;
+  color: #6b7280;
+}
+
+.return-date {
+  font-size: 0.875rem;
+  color: #059669;
+}
+
+.btn-return {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-return:hover {
+  background: #047857;
+}
+
+.notification-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-left: 4px solid #10b981;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 400px;
+  z-index: 1000;
+}
+
+.toast-icon {
+  font-size: 1.5rem;
+}
+
+.toast-content h4 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+}
+
+.toast-content p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #9ca3af;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

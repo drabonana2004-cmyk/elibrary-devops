@@ -2,70 +2,134 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Book;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class BookController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    // Récupérer tous les livres (accessible à tous)
+    public function index(Request $request)
     {
-        $query = Book::with('category');
-        
-        if ($request->has('search')) {
-            $search = $request->get('search');
-            $query->where('title', 'like', "%{$search}%")
-                  ->orWhere('author', 'like', "%{$search}%");
+        try {
+            $books = DB::table('books')
+                ->leftJoin('categories', 'books.category_id', '=', 'categories.id')
+                ->select(
+                    'books.*',
+                    'categories.name as category_name',
+                    'categories.color as category_color'
+                )
+                ->orderBy('books.created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'books' => $books
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des livres'
+            ], 500);
         }
-        
-        if ($request->has('category_id')) {
-            $query->where('category_id', $request->get('category_id'));
+    }
+
+    // Récupérer un livre par ID
+    public function show($id)
+    {
+        try {
+            $book = DB::table('books')
+                ->leftJoin('categories', 'books.category_id', '=', 'categories.id')
+                ->select(
+                    'books.*',
+                    'categories.name as category_name',
+                    'categories.color as category_color'
+                )
+                ->where('books.id', $id)
+                ->first();
+
+            if (!$book) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Livre non trouvé'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'book' => $book
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération du livre'
+            ], 500);
         }
-        
-        $books = $query->paginate(12);
-        return response()->json($books);
     }
 
-    public function store(Request $request): JsonResponse
+    // Créer un nouveau livre (admin uniquement)
+    public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'author' => 'required|string|max:255',
-            'isbn' => 'required|string|unique:books',
-            'category_id' => 'required|exists:categories,id',
-            'quantity' => 'required|integer|min:1',
-            'description' => 'nullable|string'
-        ]);
+        $userId = $request->header('User-Id', 1);
+        $userRole = $request->header('User-Role', 'user');
 
-        $validated['available_quantity'] = $validated['quantity'];
-        $book = Book::create($validated);
-        
-        return response()->json($book->load('category'), 201);
+        // Vérifier les permissions - admin uniquement
+        if ($userRole !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Seuls les administrateurs peuvent ajouter des livres'
+            ], 403);
+        }
+
+        try {
+            $bookId = DB::table('books')->insertGetId([
+                'title' => $request->title,
+                'author' => $request->author,
+                'isbn' => $request->isbn,
+                'category_id' => $request->category_id,
+                'description' => $request->description,
+                'publisher' => $request->publisher,
+                'publication_year' => $request->publication_year,
+                'pages' => $request->pages,
+                'language' => $request->language ?? 'Français',
+                'cover_image' => $request->cover_image,
+                'total_copies' => $request->total_copies ?? 1,
+                'available_copies' => $request->available_copies ?? 1,
+                'location' => $request->location,
+                'added_by' => $userId,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Livre ajouté avec succès',
+                'book_id' => $bookId
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'ajout du livre'
+            ], 500);
+        }
     }
 
-    public function show(Book $book): JsonResponse
+    // Récupérer les catégories
+    public function categories()
     {
-        return response()->json($book->load('category'));
-    }
+        try {
+            $categories = DB::table('categories')
+                ->orderBy('name')
+                ->get();
 
-    public function update(Request $request, Book $book): JsonResponse
-    {
-        $validated = $request->validate([
-            'title' => 'string|max:255',
-            'author' => 'string|max:255',
-            'isbn' => 'string|unique:books,isbn,' . $book->id,
-            'category_id' => 'exists:categories,id',
-            'quantity' => 'integer|min:1',
-            'description' => 'nullable|string'
-        ]);
-
-        $book->update($validated);
-        return response()->json($book->load('category'));
-    }
-
-    public function destroy(Book $book): JsonResponse
-    {
-        $book->delete();
-        return response()->json(['message' => 'Book deleted successfully']);
+            return response()->json([
+                'success' => true,
+                'categories' => $categories
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des catégories'
+            ], 500);
+        }
     }
 }

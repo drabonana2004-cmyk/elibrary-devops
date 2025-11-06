@@ -22,7 +22,8 @@ class AuthController extends Controller
                     'id' => 1,
                     'name' => 'Admin',
                     'email' => 'admin',
-                    'role' => 'admin'
+                    'role' => 'admin',
+                    'status' => 'approved'
                 ]
             ]);
         }
@@ -36,7 +37,8 @@ class AuthController extends Controller
                     'id' => 1,
                     'name' => 'Admin',
                     'email' => 'admin@elibrary.com',
-                    'role' => 'admin'
+                    'role' => 'admin',
+                    'status' => 'approved'
                 ]
             ]);
         }
@@ -55,7 +57,8 @@ class AuthController extends Controller
                         'id' => $user->id,
                         'name' => $user->name,
                         'email' => $user->email,
-                        'role' => $user->role ?? 'user'
+                        'role' => $user->role ?? 'user',
+                        'status' => $user->status ?? 'pending'
                     ]
                 ]);
             }

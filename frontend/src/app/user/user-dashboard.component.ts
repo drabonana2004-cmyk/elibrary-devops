@@ -1181,12 +1181,23 @@ export class UserDashboardComponent implements OnInit {
   }
 
   loadNotifications() {
+    // Charger depuis localStorage d'abord
+    const localNotifications = JSON.parse(localStorage.getItem('userNotifications_' + this.currentUser?.email) || '[]');
+    this.notifications = localNotifications;
+    this.unreadNotifications = localNotifications.filter((n: any) => !n.is_read).length;
+    
+    // Essayer de charger depuis l'API aussi
     this.apiService.getNotifications().subscribe({
-      next: (data) => {
-        this.notifications = data;
-        this.unreadNotifications = data.filter(n => !n.is_read).length;
+      next: (response: any) => {
+        if (Array.isArray(response)) {
+          this.notifications = response;
+          this.unreadNotifications = response.filter((n: any) => !n.is_read).length;
+        } else if (response.success) {
+          this.notifications = response.notifications;
+          this.unreadNotifications = response.notifications.filter((n: any) => !n.is_read).length;
+        }
       },
-      error: (error) => console.error('Erreur notifications:', error)
+      error: (error: any) => console.error('Erreur notifications API:', error)
     });
   }
 
@@ -1287,8 +1298,26 @@ export class UserDashboardComponent implements OnInit {
   }
 
   markAsRead(notificationId: number) {
-    console.log('Marquer comme lu:', notificationId);
-    this.loadNotifications();
+    // Marquer comme lu dans localStorage
+    const localNotifications = JSON.parse(localStorage.getItem('userNotifications_' + this.currentUser?.email) || '[]');
+    const notification = localNotifications.find((n: any) => n.id === notificationId);
+    if (notification) {
+      notification.is_read = true;
+      localStorage.setItem('userNotifications_' + this.currentUser?.email, JSON.stringify(localNotifications));
+    }
+    
+    // Essayer de marquer comme lu via l'API si la méthode existe
+    if (this.apiService.markNotificationAsRead) {
+      this.apiService.markNotificationAsRead(notificationId).subscribe({
+        next: () => this.loadNotifications(),
+        error: (error: any) => {
+          console.error('Erreur API:', error);
+          this.loadNotifications(); // Recharger depuis localStorage
+        }
+      });
+    } else {
+      this.loadNotifications();
+    }
   }
 
   loadUserProfile() {

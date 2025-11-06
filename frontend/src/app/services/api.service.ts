@@ -147,6 +147,10 @@ export class ApiService {
     return this.http.get<any[]>(`${this.baseUrl}/notifications`, { headers: this.getHeaders() });
   }
 
+  markNotificationAsRead(notificationId: number): Observable<any> {
+    return this.http.put(`${this.baseUrl}/notifications/${notificationId}/read`, {}, { headers: this.getHeaders() });
+  }
+
   // Utilisateurs (Admin)
   getUsers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/users`, { headers: this.getHeaders() });

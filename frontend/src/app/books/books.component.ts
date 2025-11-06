@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, Book, Category } from '../services/api.service';
+import { BookService } from '../services/book.service';
+import { BorrowService } from '../services/borrow.service';
 
 @Component({
   selector: 'app-books',
@@ -32,15 +34,22 @@ import { ApiService, Book, Category } from '../services/api.service';
           </option>
         </select>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-3" *ngIf="isAdmin()">
         <button class="btn btn-success me-2" (click)="showCategoryForm = !showCategoryForm">
           <i class="fas fa-tags"></i> Gérer Catégories
         </button>
       </div>
-      <div class="col-md-2">
+      <div class="col-md-2" *ngIf="isAdmin()">
         <button class="btn btn-primary w-100" (click)="showAddForm = !showAddForm">
           <i class="fas fa-plus"></i> Nouveau Livre
         </button>
+      </div>
+      <div class="col-md-5" *ngIf="!isAdmin()">
+        <div class="alert alert-info mb-0">
+          <i class="fas fa-info-circle"></i>
+          <span *ngIf="getUserStatus() === 'pending'">Votre compte est en attente de certification. Vous pouvez consulter le catalogue mais pas emprunter de livres.</span>
+          <span *ngIf="getUserStatus() === 'approved'">Votre compte est certifié. Vous pouvez emprunter des livres.</span>
+        </div>
       </div>
     </div>
 
@@ -151,9 +160,31 @@ import { ApiService, Book, Category } from '../services/api.service';
             <p class="card-text" *ngIf="book.description">{{book.description}}</p>
           </div>
           <div class="card-footer">
-            <span class="badge" [class]="book.available_quantity > 0 ? 'bg-success' : 'bg-danger'">
-              {{book.available_quantity > 0 ? 'Disponible' : 'Indisponible'}}
-            </span>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="badge" [class]="book.available_quantity > 0 ? 'bg-success' : 'bg-danger'">
+                {{book.available_quantity > 0 ? 'Disponible' : 'Indisponible'}}
+              </span>
+              <div class="btn-group" *ngIf="!isAdmin()">
+                <button 
+                  *ngIf="canBorrow() && book.available_quantity > 0" 
+                  class="btn btn-primary btn-sm"
+                  (click)="borrowBook(book.id)">
+                  <i class="fas fa-hand-paper"></i> Emprunter
+                </button>
+                <button 
+                  *ngIf="!canBorrow()" 
+                  class="btn btn-secondary btn-sm" 
+                  disabled
+                  title="Compte non certifié">
+                  <i class="fas fa-lock"></i> Certification requise
+                </button>
+              </div>
+            </div>
+            
+            <!-- Message de statut pour utilisateurs non certifiés -->
+            <div *ngIf="!canBorrow() && !isAdmin()" class="alert alert-warning mt-2 p-2">
+              <small><i class="fas fa-info-circle"></i> Votre compte doit être certifié pour emprunter des livres.</small>
+            </div>
           </div>
         </div>
       </div>
@@ -183,7 +214,11 @@ export class BooksComponent implements OnInit {
   newBook: Partial<Book> = {};
   newCategory: Partial<Category> = {};
 
-  constructor(private apiService: ApiService) {}
+  constructor(
+    private apiService: ApiService,
+    private bookService: BookService,
+    private borrowService: BorrowService
+  ) {}
 
   ngOnInit() {
     this.loadBooks();
@@ -252,5 +287,38 @@ export class BooksComponent implements OnInit {
         error: (error) => console.error('Erreur:', error)
       });
     }
+  }
+
+  // Nouvelles méthodes pour la gestion des emprunts et permissions
+  borrowBook(bookId: number) {
+    this.borrowService.requestBorrow(bookId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          alert('Demande d\'emprunt envoyée avec succès!');
+          this.loadBooks();
+        }
+      },
+      error: (error) => {
+        alert(error.error?.message || 'Erreur lors de la demande d\'emprunt');
+      }
+    });
+  }
+
+  canBorrow(): boolean {
+    return this.bookService.canBorrow();
+  }
+
+  canAddBooks(): boolean {
+    return this.isAdmin();
+  }
+
+  isAdmin(): boolean {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user.role === 'admin';
+  }
+
+  getUserStatus(): string {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user.status || 'pending';
   }
 }

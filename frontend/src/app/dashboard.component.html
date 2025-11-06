@@ -1,0 +1,61 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">📚 eLibrary</div>
+    <nav class="nav">
+      <a routerLink="/catalogue">Catalogue</a>
+      <a routerLink="/account" class="active">Mon compte</a>
+      <a routerLink="/kiosque">Kiosque</a>
+      <a routerLink="/notifications" class="notification-link">
+        Notifications
+        <span class="badge" *ngIf="unreadCount > 0">{{unreadCount}}</span>
+      </a>
+      <a routerLink="/profile">Profil</a>
+      <a routerLink="/help">Aide</a>
+    </nav>
+    <div class="user-info">
+      <span class="notification-count" *ngIf="unreadCount > 0">{{unreadCount}}</span>
+      <img src="assets/profile.jpg" alt="Photo de profil" class="profile-pic">
+      <span class="username">tapsoba</span>
+      <span class="badge-certified">Certifié</span>
+    </div>
+  </header>
+
+  <!-- Notifications -->
+  <!-- Notification Toast -->
+  <div class="notification-toast" *ngIf="showNotification" [@slideIn]>
+    <div class="toast-icon">✅</div>
+    <div class="toast-content">
+      <h4>{{latestNotification?.title}}</h4>
+      <p>{{latestNotification?.message}}</p>
+    </div>
+    <button class="toast-close" (click)="closeNotification()">×</button>
+  </div>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1>Mon compte</h1>
+      <p>Gérez vos emprunts et votre historique</p>
+    </div>
+
+    <div class="empty-state" *ngIf="activeLoans.length === 0">
+      <div class="empty-icon">📚</div>
+      <h3>Aucune demande en attente</h3>
+      <p>Explorez notre catalogue pour faire une demande d'emprunt</p>
+      <button class="btn-primary" routerLink="/catalogue">Parcourir le catalogue</button>
+    </div>
+
+    <!-- Emprunts actifs -->
+    <div class="loans-grid" *ngIf="activeLoans.length > 0">
+      <div class="loan-card" *ngFor="let loan of activeLoans">
+        <div class="loan-info">
+          <h3>{{loan.book.title}}</h3>
+          <p>{{loan.book.author}}</p>
+          <span class="return-date">À rendre le: {{loan.return_date | date}}</span>
+        </div>
+        <button class="btn-return" (click)="returnBook(loan.id)">Rendre</button>
+      </div>
+    </div>
+  </main>
+</div>
