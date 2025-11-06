@@ -32,7 +32,7 @@ export class AuthService {
   login(email: string, password: string): Observable<AuthResponse> {
     // Simuler la connexion
     const defaultUsers = [
-      { id: 1, name: 'Admin', email: 'admin', password: 'admin', role: 'admin' },
+      { id: 1, name: 'Admin', email: 'admin@gmail.com', password: 'admin123', role: 'admin' },
       { id: 2, name: 'Admin', email: 'admin@elibrary.com', password: 'admin123', role: 'admin' },
       { id: 3, name: 'Test User', email: 'user@test.com', password: 'user123', role: 'user', status: 'approved' }
     ];

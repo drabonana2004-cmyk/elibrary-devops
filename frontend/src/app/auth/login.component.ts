@@ -440,8 +440,8 @@ export class LoginComponent {
   showRegister = false;
 
   constructor(
-    private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   toggleForm() {
@@ -462,20 +462,6 @@ export class LoginComponent {
       return;
     }
 
-    // Connexion admin directe
-    if (this.credentials.email === 'admin' && this.credentials.password === 'admin') {
-      const token = 'admin-token-' + Date.now();
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({
-        id: 1,
-        name: 'Admin',
-        email: 'admin',
-        role: 'admin'
-      }));
-      this.router.navigate(['/admin']);
-      return;
-    }
-
     this.loading = true;
     this.error = '';
 
@@ -493,7 +479,7 @@ export class LoginComponent {
         },
         error: (error) => {
           this.loading = false;
-          this.error = 'Identifiants incorrects';
+          this.error = error.message || 'Identifiants incorrects';
         }
       });
   }

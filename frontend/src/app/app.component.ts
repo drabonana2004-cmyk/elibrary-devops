@@ -7,7 +7,12 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [RouterOutlet, CommonModule],
   template: `
-    <router-outlet></router-outlet>
+    <div class="container-fluid">
+      <nav class="navbar navbar-dark bg-primary">
+        <span class="navbar-brand mb-0 h1">📚 eLibrary</span>
+      </nav>
+      <router-outlet></router-outlet>
+    </div>
   `
 })
 export class AppComponent {
