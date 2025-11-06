@@ -111,11 +111,8 @@ import { AuthService } from '../services/auth.service';
                     <img [src]="book.cover_url" [alt]="book.title" class="cover-image" (error)="onBookImageError($event, book)">
                   </div>
                   <div class="card-header border-0 pb-2">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-start">
                       <span class="badge" [style.background]="getGenreColor(book.genre)">{{book.genre}}</span>
-                      <span class="badge" [class]="book.available > 0 ? 'bg-success' : 'bg-danger'">
-                        {{book.available}}/{{book.stock}}
-                      </span>
                     </div>
                   </div>
                   <div class="card-body">
@@ -150,11 +147,8 @@ import { AuthService } from '../services/auth.service';
                   <img [src]="book.cover_url" [alt]="book.title" class="cover-image" (error)="onBookImageError($event, book)">
                 </div>
                 <div class="card-header border-0 pb-2">
-                  <div class="d-flex justify-content-between">
+                  <div class="d-flex justify-content-start">
                     <span class="badge" [style.background]="getGenreColor(book.genre)">{{book.genre}}</span>
-                    <span class="badge" [class]="book.available > 0 ? 'bg-success' : 'bg-danger'">
-                      {{book.available}}/{{book.stock}}
-                    </span>
                   </div>
                 </div>
                 <div class="card-body">
@@ -293,7 +287,6 @@ import { AuthService } from '../services/auth.service';
                     <th>Date emprunt</th>
                     <th>Date retour</th>
                     <th>Statut</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -303,11 +296,6 @@ import { AuthService } from '../services/auth.service';
                     <td>{{borrow.date_emprunt | date}}</td>
                     <td>{{borrow.date_retour_effective | date}}</td>
                     <td><span class="badge" [class]="getBorrowStatusClass(borrow.status)">{{getStatusLabel(borrow.status)}}</span></td>
-                    <td>
-                      <button class="btn btn-sm btn-outline-info" (click)="downloadReceipt(borrow.id)" title="Télécharger reçu">
-                        <i class="fas fa-download"></i>
-                      </button>
-                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -1169,7 +1157,7 @@ export class UserDashboardComponent implements OnInit {
         author: req.book_author,
         date_emprunt: req.request_date,
         date_retour_prevue: req.status === 'approved' ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() : null,
-        date_retour_effective: null,
+        date_retour_effective: req.return_date,
         status: req.status,
         rejection_reason: req.rejection_reason
       }));
@@ -1177,7 +1165,7 @@ export class UserDashboardComponent implements OnInit {
     const allBorrows = [...localBorrows, ...borrowRequests];
     this.myBorrows = allBorrows;
     this.currentBorrows = allBorrows.filter((b: any) => b.status === 'pending');
-    this.borrowHistory = allBorrows.filter((b: any) => b.status === 'returned' || b.status === 'rejected');
+    this.borrowHistory = allBorrows.filter((b: any) => b.status === 'approved' || b.status === 'returned' || b.status === 'rejected');
   }
 
   loadNotifications() {
@@ -1292,7 +1280,10 @@ export class UserDashboardComponent implements OnInit {
       'info': 'fa-info-circle',
       'warning': 'fa-exclamation-triangle',
       'error': 'fa-times-circle',
-      'success': 'fa-check-circle'
+      'success': 'fa-check-circle',
+      'loan_approved': 'fa-check-circle',
+      'loan_rejected': 'fa-times-circle',
+      'account_approved': 'fa-user-check'
     };
     return icons[type] || 'fa-bell';
   }

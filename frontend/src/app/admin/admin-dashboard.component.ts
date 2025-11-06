@@ -1228,10 +1228,11 @@ export class AdminDashboardComponent implements OnInit {
       this.currentUser = event.detail;
     });
     
-    // Vérifier périodiquement les nouvelles demandes
+    // Vérifier périodiquement les nouvelles demandes ET emprunts
     setInterval(() => {
       this.loadRegistrationRequests();
-    }, 30000);
+      this.loadBorrows(); // Recharger aussi les emprunts
+    }, 10000); // Plus fréquent pour les tests
     
     // Initialiser les graphiques après le chargement
     setTimeout(() => {
@@ -1580,8 +1581,13 @@ export class AdminDashboardComponent implements OnInit {
     const borrowRequests = JSON.parse(localStorage.getItem('borrowRequests') || '[]');
     const localBorrows = JSON.parse(localStorage.getItem('borrows') || '[]');
     
+    console.log('Demandes d\'emprunt chargées:', borrowRequests);
+    console.log('Emprunts locaux chargés:', localBorrows);
+    
     // Combiner tous les emprunts
     this.borrows = [...localBorrows, ...borrowRequests];
+    
+    console.log('Total emprunts combinés:', this.borrows);
     
     // Fallback API si pas de données locales
     if (this.borrows.length === 0) {
@@ -1693,6 +1699,16 @@ export class AdminDashboardComponent implements OnInit {
       // Chercher dans les demandes d'emprunt
       const requestIndex = borrowRequests.findIndex((req: any) => req.id === borrowId);
       if (requestIndex !== -1) {
+        const request = borrowRequests[requestIndex];
+        
+        // Augmenter le stock du livre
+        const books = JSON.parse(localStorage.getItem('adminBooks') || '[]');
+        const bookIndex = books.findIndex((book: any) => book.id === request.book_id);
+        if (bookIndex !== -1) {
+          books[bookIndex].available += 1;
+          localStorage.setItem('adminBooks', JSON.stringify(books));
+        }
+        
         borrowRequests[requestIndex].status = 'returned';
         borrowRequests[requestIndex].return_date = new Date().toISOString();
         localStorage.setItem('borrowRequests', JSON.stringify(borrowRequests));
@@ -1708,9 +1724,10 @@ export class AdminDashboardComponent implements OnInit {
       
       // Recharger les données
       this.loadBorrows();
+      this.loadBooks();
       this.loadStats();
       
-      alert('Livre marqué comme retourné avec succès!');
+      alert('Livre retourné avec succès! Le stock a été mis à jour.');
       
       // Fallback API
       this.apiService.returnBook(borrowId).subscribe({
@@ -2295,6 +2312,18 @@ export class AdminDashboardComponent implements OnInit {
           window.dispatchEvent(new CustomEvent('userStatusUpdated', { detail: currentUser }));
         }
         
+        // Créer une notification de certification pour l'utilisateur
+        const userNotifications = JSON.parse(localStorage.getItem('userNotifications_' + approvedRequest.email) || '[]');
+        userNotifications.unshift({
+          id: Date.now(),
+          type: 'account_approved',
+          title: 'Compte certifié',
+          message: `Félicitations ${approvedRequest.name}! Votre compte a été certifié par l'administrateur. Vous pouvez maintenant emprunter des livres.`,
+          is_read: false,
+          created_at: new Date().toISOString()
+        });
+        localStorage.setItem('userNotifications_' + approvedRequest.email, JSON.stringify(userNotifications));
+        
         // Mettre à jour aussi dans la liste des utilisateurs inscrits
         const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
         const userIndex = registeredUsers.findIndex((u: any) => u.email === approvedRequest.email);
@@ -2409,7 +2438,10 @@ export class AdminDashboardComponent implements OnInit {
 
   getPendingBorrowRequests(): any[] {
     const borrowRequests = JSON.parse(localStorage.getItem('borrowRequests') || '[]');
-    return borrowRequests.filter((req: any) => req.status === 'pending');
+    console.log('Toutes les demandes d\'emprunt:', borrowRequests);
+    const pendingRequests = borrowRequests.filter((req: any) => req.status === 'pending');
+    console.log('Demandes en attente:', pendingRequests);
+    return pendingRequests;
   }
 
   approveBorrowRequest(requestId: number) {
@@ -2418,13 +2450,39 @@ export class AdminDashboardComponent implements OnInit {
       const requestIndex = borrowRequests.findIndex((req: any) => req.id === requestId);
       
       if (requestIndex !== -1) {
+        const request = borrowRequests[requestIndex];
+        
+        // Diminuer le stock du livre
+        const books = JSON.parse(localStorage.getItem('adminBooks') || '[]');
+        const bookIndex = books.findIndex((book: any) => book.id === request.book_id);
+        if (bookIndex !== -1 && books[bookIndex].available > 0) {
+          books[bookIndex].available -= 1;
+          localStorage.setItem('adminBooks', JSON.stringify(books));
+        }
+        
         borrowRequests[requestIndex].status = 'approved';
         borrowRequests[requestIndex].admin_response = 'approved';
         borrowRequests[requestIndex].approval_date = new Date().toISOString();
         
+        // Créer une notification pour l'utilisateur
+        const userNotifications = JSON.parse(localStorage.getItem('userNotifications_' + request.user_email) || '[]');
+        userNotifications.unshift({
+          id: Date.now(),
+          type: 'loan_approved',
+          title: 'Demande d\'emprunt acceptée',
+          message: `Votre demande pour "${request.book_title}" a été acceptée. Vous pouvez récupérer le livre.`,
+          is_read: false,
+          created_at: new Date().toISOString()
+        });
+        localStorage.setItem('userNotifications_' + request.user_email, JSON.stringify(userNotifications));
+        
         localStorage.setItem('borrowRequests', JSON.stringify(borrowRequests));
         
-        alert('Demande approuvée ! L\'utilisateur recevra une notification et pourra venir récupérer le livre.');
+        // Recharger les données
+        this.loadBorrows();
+        this.loadBooks();
+        
+        alert('Demande approuvée ! Le stock a été mis à jour et l\'utilisateur recevra une notification.');
       }
     }
   }
@@ -2442,7 +2500,22 @@ export class AdminDashboardComponent implements OnInit {
           borrowRequests[requestIndex].rejection_reason = reason;
           borrowRequests[requestIndex].rejection_date = new Date().toISOString();
           
+          // Créer une notification pour l'utilisateur
+          const userNotifications = JSON.parse(localStorage.getItem('userNotifications_' + borrowRequests[requestIndex].user_email) || '[]');
+          userNotifications.unshift({
+            id: Date.now(),
+            type: 'loan_rejected',
+            title: 'Demande d\'emprunt rejetée',
+            message: `Votre demande pour "${borrowRequests[requestIndex].book_title}" a été rejetée. Motif: ${reason}`,
+            is_read: false,
+            created_at: new Date().toISOString()
+          });
+          localStorage.setItem('userNotifications_' + borrowRequests[requestIndex].user_email, JSON.stringify(userNotifications));
+          
           localStorage.setItem('borrowRequests', JSON.stringify(borrowRequests));
+          
+          // Recharger les données pour mettre à jour l'interface
+          this.loadBorrows();
           
           alert('Demande rejetée. L\'utilisateur recevra une notification avec le motif.');
         }
