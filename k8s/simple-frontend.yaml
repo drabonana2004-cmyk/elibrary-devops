@@ -15,10 +15,22 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: elibrary-frontend:latest
-        imagePullPolicy: Never
+        image: nginx:alpine
         ports:
         - containerPort: 80
+        volumeMounts:
+        - name: frontend-content
+          mountPath: /usr/share/nginx/html
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+      volumes:
+      - name: frontend-content
+        configMap:
+          name: frontend-content
+      - name: nginx-config
+        configMap:
+          name: nginx-config
 ---
 apiVersion: v1
 kind: Service

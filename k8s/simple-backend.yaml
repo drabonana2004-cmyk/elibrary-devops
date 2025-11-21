@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
       - name: backend
-        image: php:8.2-apache
+        image: elibrary-backend:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 80
         env:
@@ -23,8 +24,10 @@ spec:
           value: "mysql-service"
         - name: DB_DATABASE
           value: "elibrary"
-        command: ["/bin/sh"]
-        args: ["-c", "echo 'Backend PHP running' && apache2-foreground"]
+        - name: DB_USERNAME
+          value: "root"
+        - name: DB_PASSWORD
+          value: "secretpassword"
 ---
 apiVersion: v1
 kind: Service
@@ -35,5 +38,5 @@ spec:
   selector:
     app: backend
   ports:
-  - port: 8000
+  - port: 80
     targetPort: 80

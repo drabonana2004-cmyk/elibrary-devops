@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-html
+  namespace: elibrary
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>eLibrary</title>
+        <meta charset="utf-8">
+        <style>
+            body { font-family: Arial; margin: 40px; background: #f5f5f5; }
+            .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+            h1 { color: #333; text-align: center; }
+            .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+            .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+            .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+            button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+            button:hover { background: #0056b3; }
+            #books { margin-top: 20px; }
+            .book { border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>📚 eLibrary - Kubernetes</h1>
+            <div class="status success">
+                ✅ Frontend déployé avec succès sur Kubernetes
+            </div>
+            <div class="status info">
+                🔗 Backend URL: http://backend-service/api
+            </div>
+            
+            <button onclick="testBackend()">Test Backend</button>
+            <button onclick="loadBooks()">Charger Livres</button>
+            
+            <div id="result"></div>
+            <div id="books"></div>
+        </div>
+
+        <script>
+            async function testBackend() {
+                const result = document.getElementById('result');
+                try {
+                    const response = await fetch('/api/test');
+                    const data = await response.text();
+                    result.innerHTML = '<div class="status success">Backend OK: ' + data + '</div>';
+                } catch (error) {
+                    result.innerHTML = '<div class="status error">Erreur Backend: ' + error.message + '</div>';
+                }
+            }
+
+            async function loadBooks() {
+                const books = document.getElementById('books');
+                try {
+                    const response = await fetch('/api/books');
+                    const data = await response.json();
+                    books.innerHTML = '<h3>Livres disponibles:</h3>';
+                    data.forEach(book => {
+                        books.innerHTML += '<div class="book"><strong>' + book.title + '</strong><br>Auteur: ' + book.author + '</div>';
+                    });
+                } catch (error) {
+                    books.innerHTML = '<div class="status error">Erreur chargement livres: ' + error.message + '</div>';
+                }
+            }
+        </script>
+    </body>
+    </html>
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: elibrary
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+    http {
+        upstream backend {
+            server backend-service:80;
+        }
+        
+        server {
+            listen 80;
+            server_name localhost;
+            
+            location / {
+                root /usr/share/nginx/html;
+                index index.html;
+                try_files $uri $uri/ /index.html;
+            }
+            
+            location /api/ {
+                proxy_pass http://backend/;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+            }
+        }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: elibrary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: html-content
+          mountPath: /usr/share/nginx/html
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+      volumes:
+      - name: html-content
+        configMap:
+          name: frontend-html
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: elibrary
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 4200
+    targetPort: 80
+  type: LoadBalancer

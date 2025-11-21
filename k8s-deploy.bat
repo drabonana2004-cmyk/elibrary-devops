@@ -15,21 +15,21 @@ kubectl get namespace elibrary
 
 echo.
 echo 3. DEPLOIEMENT MYSQL:
-kubectl apply -f k8s/mysql/mysql-deployment.yaml
+kubectl apply -f k8s/simple-mysql.yaml
 echo Attente MySQL...
-timeout /t 10 /nobreak >nul
+timeout /t 15 /nobreak >nul
 
 echo.
 echo 4. DEPLOIEMENT BACKEND:
-kubectl apply -f k8s/backend/backend-deployment.yaml
+kubectl apply -f k8s/simple-backend.yaml
 echo Attente Backend...
-timeout /t 10 /nobreak >nul
+timeout /t 15 /nobreak >nul
 
 echo.
 echo 5. DEPLOIEMENT FRONTEND:
-kubectl apply -f k8s/frontend/frontend-deployment.yaml
+kubectl apply -f k8s/simple-frontend.yaml
 echo Attente Frontend...
-timeout /t 10 /nobreak >nul
+timeout /t 15 /nobreak >nul
 
 echo.
 echo 6. VERIFICATION DEPLOIEMENT:
@@ -45,7 +45,7 @@ echo DEPLOIEMENT TERMINE !
 echo ========================================
 echo.
 echo Acces application:
-echo - Frontend: kubectl port-forward svc/frontend-service 4200:80 -n elibrary
-echo - Backend: kubectl port-forward svc/backend-service 8000:8000 -n elibrary
+echo - Frontend: kubectl port-forward svc/frontend-service 4200:4200 -n elibrary
+echo - Backend: kubectl port-forward svc/backend-service 8000:80 -n elibrary
 echo.
 pause

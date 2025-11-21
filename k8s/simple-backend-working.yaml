@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-php
+  namespace: elibrary
+data:
+  index.php: |
+    <?php
+    header('Content-Type: application/json');
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type');
+
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        exit(0);
+    }
+
+    $uri = $_SERVER['REQUEST_URI'];
+    
+    if ($uri === '/test' || $uri === '/') {
+        echo json_encode(['status' => 'OK', 'message' => 'Backend Laravel fonctionne', 'timestamp' => date('Y-m-d H:i:s')]);
+        exit;
+    }
+    
+    if ($uri === '/books') {
+        $books = [
+            ['id' => 1, 'title' => 'Le Petit Prince', 'author' => 'Antoine de Saint-Exupéry', 'available' => true],
+            ['id' => 2, 'title' => '1984', 'author' => 'George Orwell', 'available' => true],
+            ['id' => 3, 'title' => 'Harry Potter', 'author' => 'J.K. Rowling', 'available' => false]
+        ];
+        echo json_encode($books);
+        exit;
+    }
+    
+    if ($uri === '/health') {
+        $db_status = 'OK';
+        try {
+            $pdo = new PDO('mysql:host=mysql-service;dbname=elibrary', 'root', 'secretpassword');
+            $pdo->query('SELECT 1');
+        } catch (Exception $e) {
+            $db_status = 'ERROR: ' . $e->getMessage();
+        }
+        
+        echo json_encode([
+            'status' => 'OK',
+            'database' => $db_status,
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+        exit;
+    }
+    
+    http_response_code(404);
+    echo json_encode(['error' => 'Endpoint not found']);
+    ?>
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: elibrary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: php:8.2-apache
+        ports:
+        - containerPort: 80
+        env:
+        - name: DB_HOST
+          value: "mysql-service"
+        - name: DB_DATABASE
+          value: "elibrary"
+        - name: DB_USERNAME
+          value: "root"
+        - name: DB_PASSWORD
+          value: "secretpassword"
+        volumeMounts:
+        - name: php-code
+          mountPath: /var/www/html
+        command: ["/bin/sh"]
+        args: ["-c", "docker-php-ext-install pdo pdo_mysql && apache2-foreground"]
+      volumes:
+      - name: php-code
+        configMap:
+          name: backend-php
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: elibrary
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 80
+    targetPort: 80
