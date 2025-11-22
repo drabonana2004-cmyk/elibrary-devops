@@ -15,9 +15,11 @@
     </nav>
     <div class="user-info">
       <span class="notification-count" *ngIf="unreadCount > 0">{{unreadCount}}</span>
-      <img src="assets/profile.jpg" alt="Photo de profil" class="profile-pic">
-      <span class="username">tapsoba</span>
-      <span class="badge-certified">Certifié</span>
+      <img [src]="userPhotoUrl" alt="Photo de profil" class="profile-pic" 
+           (error)="userPhotoUrl='assets/default-avatar.png'">
+      <span class="username">{{currentUser?.name || 'Utilisateur'}}</span>
+      <span class="badge-certified" *ngIf="currentUser?.role === 'admin'">Admin</span>
+      <span class="badge-certified" *ngIf="currentUser?.role === 'user'">Utilisateur</span>
     </div>
   </header>
 

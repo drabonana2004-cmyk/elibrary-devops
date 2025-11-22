@@ -473,7 +473,7 @@ export class LoginComponent {
             if (response.user.role === 'admin') {
               this.router.navigate(['/admin']);
             } else {
-              this.router.navigate(['/user']);
+              this.router.navigate(['/books']);
             }
           }
         },
@@ -550,23 +550,54 @@ export class LoginComponent {
           if (response.success) {
             alert(`Compte créé avec succès !\nMatricule: ${response.matricule}\n\nVous allez être connecté automatiquement.`);
             
-            // Créer l'URL de la photo depuis le fichier
-            const photoUrl = this.registerData.photo ? URL.createObjectURL(this.registerData.photo) : null;
+            // Créer l'URL de la photo depuis le fichier et la convertir en base64
+            let photoUrl = null;
+            if (this.registerData.photo) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                photoUrl = e.target?.result as string;
+                
+                // Sauvegarder avec la photo en base64
+                const userData = {
+                  id: response.user.id,
+                  name: response.user.name,
+                  email: response.user.email,
+                  role: 'user',
+                  status: response.user.status,
+                  photo_url: photoUrl
+                };
+                
+                localStorage.setItem('user', JSON.stringify(userData));
+                localStorage.setItem('userPhoto_' + response.user.email, photoUrl);
+                
+                // Mettre à jour le service auth
+                this.authService.updateCurrentUser(userData);
+                
+                console.log('Photo sauvegardée pour:', response.user.email);
+              };
+              reader.readAsDataURL(this.registerData.photo);
+            }
             
             // Connexion automatique directe
             const token = 'fake-jwt-token-' + Date.now();
             localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify({
-              id: response.user.id,
-              name: response.user.name,
-              email: response.user.email,
-              role: 'user',
-              status: response.user.status,
-              photo_url: photoUrl
-            }));
             
-            // Redirection vers le dashboard utilisateur
-            this.router.navigate(['/user']);
+            // Si pas de photo, sauvegarder quand même les données utilisateur
+            if (!this.registerData.photo) {
+              const userData = {
+                id: response.user.id,
+                name: response.user.name,
+                email: response.user.email,
+                role: 'user',
+                status: response.user.status,
+                photo_url: null
+              };
+              localStorage.setItem('user', JSON.stringify(userData));
+              this.authService.updateCurrentUser(userData);
+            }
+            
+            // Redirection vers le catalogue (dashboard utilisateur)
+            this.router.navigate(['/books']);
           }
         },
         error: (error) => {

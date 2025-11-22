@@ -47,5 +47,15 @@ export const routes: Routes = [
     path: 'kiosk', 
     loadComponent: () => import('./kiosk/kiosk.component').then(m => m.KioskComponent),
     canActivate: [authGuard]
+  },
+  { 
+    path: 'books', 
+    loadComponent: () => import('./books/books.component').then(m => m.BooksComponent),
+    canActivate: [authGuard]
+  },
+  { 
+    path: 'catalogue', 
+    redirectTo: '/books', 
+    pathMatch: 'full'
   }
 ];

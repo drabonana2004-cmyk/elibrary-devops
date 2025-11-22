@@ -8,6 +8,7 @@ export interface User {
   name: string;
   email: string;
   role: 'admin' | 'user';
+  photo_url?: string;
 }
 
 export interface AuthResponse {
@@ -30,49 +31,70 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<AuthResponse> {
-    // Simuler la connexion
     const defaultUsers = [
       { id: 1, name: 'Admin', email: 'admin@gmail.com', password: 'admin123', role: 'admin' },
       { id: 2, name: 'Admin', email: 'admin@elibrary.com', password: 'admin123', role: 'admin' },
       { id: 3, name: 'Test User', email: 'user@test.com', password: 'user123', role: 'user', status: 'approved' }
     ];
     
-    // Vérifier les utilisateurs inscrits dans localStorage
     const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
     const allUsers = [...defaultUsers, ...registeredUsers];
-    
     const user = allUsers.find(u => u.email === email && u.password === password);
     
     return new Observable(observer => {
       setTimeout(() => {
         if (user) {
-          // Récupérer la photo depuis le stockage séparé si elle existe
-          const storedPhotoUrl = localStorage.getItem('userPhoto_' + user.email);
-          const photoUrl = user.photo_url || storedPhotoUrl;
+          // TOUJOURS récupérer la photo - méthode garantie
+          let photoUrl = null;
+          
+          // 1. Chercher dans registeredUsers (source principale)
+          const registeredUser = registeredUsers.find((u: any) => u.email === email);
+          if (registeredUser?.photo_url) {
+            photoUrl = registeredUser.photo_url;
+          }
+          
+          // 2. Chercher dans le stockage séparé
+          if (!photoUrl) {
+            photoUrl = localStorage.getItem('userPhoto_' + email);
+          }
+          
+          // 3. Chercher dans l'utilisateur lui-même
+          if (!photoUrl && user.photo_url) {
+            photoUrl = user.photo_url;
+          }
           
           const token = 'fake-jwt-token-' + Date.now();
-          const userWithUpdatedInfo = {
+          const finalUser = {
             id: user.id,
             name: user.name,
             email: user.email,
             role: user.role as 'admin' | 'user',
-            status: user.status || 'pending',
+            status: registeredUser?.status || user.status || 'pending',
             photo_url: photoUrl
           };
           
-          const response: AuthResponse = {
+          // FORCER la sauvegarde de la photo dans TOUS les endroits
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(finalUser));
+          if (photoUrl) {
+            localStorage.setItem('userPhoto_' + email, photoUrl);
+            localStorage.setItem('currentUserPhoto', photoUrl); // Sauvegarde supplémentaire
+          }
+          
+          // Mettre à jour le service
+          this.currentUserSubject.next(finalUser as any);
+          
+          console.log('=== CONNEXION DEBUG ===');
+          console.log('Email:', email);
+          console.log('Photo trouvée:', photoUrl);
+          console.log('Utilisateur final:', finalUser);
+          console.log('=====================');
+          
+          observer.next({
             success: true,
             token,
-            user: { id: user.id, name: user.name, email: user.email, role: user.role as 'admin' | 'user' }
-          };
-          
-          localStorage.setItem('token', token);
-          localStorage.setItem('user', JSON.stringify(userWithUpdatedInfo));
-          
-          // Mettre à jour immédiatement le currentUserSubject avec toutes les infos
-          this.currentUserSubject.next(userWithUpdatedInfo as any);
-          
-          observer.next(response);
+            user: finalUser as any
+          });
         } else {
           observer.error({ message: 'Identifiants incorrects' });
         }
@@ -88,7 +110,6 @@ export class AuthService {
   registerComplete(formData: FormData): Observable<any> {
     // Simuler la création de compte réussie
     const photoFile = formData.get('photo') as File;
-    const photoUrl = photoFile ? URL.createObjectURL(photoFile) : null;
     
     const userData = {
       id: Date.now(),
@@ -100,7 +121,7 @@ export class AuthService {
       profession: formData.get('profession'),
       profession_detail: formData.get('profession_detail'),
       motivations: formData.get('motivations'),
-      photo_url: photoUrl,
+      photo_file: photoFile, // Garder le fichier pour traitement
       status: 'pending'
     };
 
@@ -123,39 +144,80 @@ export class AuthService {
   }
 
   private notifyAdminNewRegistration(user: any): void {
-    // Ajouter à la liste des demandes d'inscription dans le localStorage
-    const existingRequests = JSON.parse(localStorage.getItem('registrationRequests') || '[]');
-    const newRequest = {
-      id: Date.now(),
-      name: user.name,
-      surname: user.surname,
-      email: user.email,
-      etablissement: user.etablissement,
-      profession: user.profession,
-      profession_detail: user.profession_detail,
-      motivations: user.motivations,
-      photo_url: user.photo_url,
-      created_at: new Date(),
-      documents_uploaded: true
-    };
-    existingRequests.push(newRequest);
-    localStorage.setItem('registrationRequests', JSON.stringify(existingRequests));
-    
-    // Ajouter aussi à la liste des utilisateurs inscrits pour permettre la connexion
-    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    registeredUsers.push({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      password: user.password,
-      role: 'user',
-      status: 'pending',
-      photo_url: user.photo_url
-    });
-    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-    
-    // Sauvegarder aussi la photo dans un stockage séparé pour éviter la perte
-    localStorage.setItem('userPhoto_' + user.email, user.photo_url);
+    // Convertir la photo en base64 si elle existe
+    if (user.photo_file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const photoBase64 = e.target?.result as string;
+        
+        // Ajouter à la liste des demandes d'inscription
+        const existingRequests = JSON.parse(localStorage.getItem('registrationRequests') || '[]');
+        const newRequest = {
+          id: Date.now(),
+          name: user.name,
+          surname: user.surname,
+          email: user.email,
+          etablissement: user.etablissement,
+          profession: user.profession,
+          profession_detail: user.profession_detail,
+          motivations: user.motivations,
+          photo_url: photoBase64,
+          created_at: new Date(),
+          documents_uploaded: true
+        };
+        existingRequests.push(newRequest);
+        localStorage.setItem('registrationRequests', JSON.stringify(existingRequests));
+        
+        // Ajouter à la liste des utilisateurs inscrits
+        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        registeredUsers.push({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          password: user.password,
+          role: 'user',
+          status: 'pending',
+          photo_url: photoBase64
+        });
+        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+        
+        // Sauvegarder la photo séparément
+        localStorage.setItem('userPhoto_' + user.email, photoBase64);
+        
+        console.log('Photo utilisateur sauvegardée en base64 pour:', user.email);
+      };
+      reader.readAsDataURL(user.photo_file);
+    } else {
+      // Pas de photo, sauvegarder quand même les données
+      const existingRequests = JSON.parse(localStorage.getItem('registrationRequests') || '[]');
+      const newRequest = {
+        id: Date.now(),
+        name: user.name,
+        surname: user.surname,
+        email: user.email,
+        etablissement: user.etablissement,
+        profession: user.profession,
+        profession_detail: user.profession_detail,
+        motivations: user.motivations,
+        photo_url: null,
+        created_at: new Date(),
+        documents_uploaded: true
+      };
+      existingRequests.push(newRequest);
+      localStorage.setItem('registrationRequests', JSON.stringify(existingRequests));
+      
+      const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+      registeredUsers.push({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        password: user.password,
+        role: 'user',
+        status: 'pending',
+        photo_url: null
+      });
+      localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+    }
   }
 
   logout(): void {
@@ -196,19 +258,28 @@ export class AuthService {
       try {
         const user = JSON.parse(userStr);
         
-        // Vérifier si l'utilisateur a été certifié depuis la dernière connexion
+        // Toujours vérifier et mettre à jour les données utilisateur
         const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
         const updatedUser = registeredUsers.find((u: any) => u.email === user.email);
+        const storedPhoto = localStorage.getItem('userPhoto_' + user.email);
         
-        if (updatedUser && updatedUser.status !== user.status) {
-          // Mettre à jour le statut et la photo
-          user.status = updatedUser.status;
-          user.photo_url = updatedUser.photo_url || localStorage.getItem('userPhoto_' + user.email);
-          localStorage.setItem('user', JSON.stringify(user));
+        // Mettre à jour avec les dernières données disponibles
+        const finalUser = {
+          ...user,
+          status: updatedUser?.status || user.status || 'pending',
+          photo_url: updatedUser?.photo_url || storedPhoto || user.photo_url
+        };
+        
+        // Sauvegarder les données mises à jour
+        localStorage.setItem('user', JSON.stringify(finalUser));
+        if (finalUser.photo_url) {
+          localStorage.setItem('userPhoto_' + user.email, finalUser.photo_url);
         }
         
-        this.currentUserSubject.next(user);
+        console.log('Chargement depuis storage - Utilisateur final:', finalUser);
+        this.currentUserSubject.next(finalUser);
       } catch (e) {
+        console.error('Erreur chargement utilisateur:', e);
         this.logout();
       }
     }

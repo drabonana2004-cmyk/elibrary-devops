@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { NotificationService } from './services/notification.service';
 import { LoanService } from './services/loan.service';
+import { AuthService, User } from './services/auth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -13,16 +14,33 @@ export class DashboardComponent implements OnInit {
   activeLoans: any[] = [];
   showNotification = false;
   latestNotification: any;
+  currentUser: User | null = null;
+  userPhotoUrl: string = 'assets/default-avatar.png';
 
   constructor(
     private notificationService: NotificationService,
-    private loanService: LoanService
+    private loanService: LoanService,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
+    this.loadUserData();
     this.loadNotifications();
     this.loadActiveLoans();
     this.checkNewNotifications();
+  }
+
+  loadUserData() {
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+      if (user) {
+        // Récupérer la photo depuis localStorage ou utiliser photo par défaut
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        this.userPhotoUrl = storedUser.photo_url || 
+                           localStorage.getItem('userPhoto_' + user.email) || 
+                           'assets/default-avatar.png';
+      }
+    });
   }
 
   checkNewNotifications() {

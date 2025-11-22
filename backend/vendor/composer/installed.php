@@ -3,7 +3,7 @@
         'name' => 'elibrary/backend',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'aec140c10dda17fe454211d97d5a083f13013b82',
+        'reference' => 'd50797bcf33564e575bff9e2b77ff480d4984a80',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -88,7 +88,7 @@
         'elibrary/backend' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'aec140c10dda17fe454211d97d5a083f13013b82',
+            'reference' => 'd50797bcf33564e575bff9e2b77ff480d4984a80',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

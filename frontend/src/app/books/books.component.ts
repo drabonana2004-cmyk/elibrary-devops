@@ -1,18 +1,67 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { ApiService, Book, Category } from '../services/api.service';
 import { BookService } from '../services/book.service';
 import { BorrowService } from '../services/borrow.service';
+import { AuthService, User } from '../services/auth.service';
 
 @Component({
   selector: 'app-books',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   template: `
+    <!-- Header avec photo utilisateur -->
+    <header class="header mb-4">
+      <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+        <div class="logo">
+          <h2 class="mb-0">📚 eLibrary</h2>
+        </div>
+        <nav class="nav d-flex gap-3">
+          <a routerLink="/catalogue" class="text-decoration-none">Catalogue</a>
+          <a routerLink="/account" class="text-decoration-none">Mon compte</a>
+          <a routerLink="/kiosque" class="text-decoration-none">Kiosque</a>
+          <a routerLink="/notifications" class="text-decoration-none position-relative">
+            Notifications
+            <span class="badge bg-danger position-absolute top-0 start-100 translate-middle" *ngIf="unreadCount > 0">{{unreadCount}}</span>
+          </a>
+          <a routerLink="/profile" class="text-decoration-none">Profil</a>
+          <a routerLink="/help" class="text-decoration-none">Aide</a>
+        </nav>
+        <div class="user-info d-flex align-items-center gap-2">
+          <span class="badge bg-primary" *ngIf="unreadCount > 0">{{unreadCount}}</span>
+          <div class="user-photo-container" style="width: 40px; height: 40px; position: relative;">
+            <img *ngIf="hasUserPhoto()" 
+                 [src]="getUserPhoto()" 
+                 alt="Photo de profil" 
+                 class="rounded-circle border" 
+                 style="width: 40px; height: 40px; object-fit: cover;"
+                 (error)="onPhotoError($event)">
+            <div *ngIf="!hasUserPhoto()" 
+                 class="user-initials"
+                 style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(45deg, #4B7688, #2E8B8B); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; border: 2px solid rgba(255,255,255,0.3);">
+              {{getUserInitials()}}
+            </div>
+          </div>
+          <span class="fw-bold">{{currentUser?.name || 'Utilisateur'}}</span>
+          <span class="badge bg-success" *ngIf="getUserStatus() === 'approved'">Certifié</span>
+          <span class="badge bg-warning" *ngIf="getUserStatus() === 'pending'">En attente</span>
+          <button class="btn btn-sm btn-outline-primary ms-2" (click)="addTestPhoto()" title="Ajouter photo de test">
+            <i class="fas fa-camera"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary ms-1" (click)="forceReloadPhoto()" title="Recharger photo">
+            <i class="fas fa-sync"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Titre de la page -->
     <div class="row">
       <div class="col-12">
-        <h2><i class="fas fa-books"></i> Catalogue des Livres</h2>
+        <h3><i class="fas fa-book"></i> Catalogue des livres</h3>
+        <p class="text-muted">Recherchez et découvrez nos livres disponibles</p>
       </div>
     </div>
 
@@ -155,14 +204,15 @@ import { BorrowService } from '../services/borrow.service';
               <strong>Auteur:</strong> {{book.author}}<br>
               <strong>ISBN:</strong> {{book.isbn}}<br>
               <strong>Catégorie:</strong> {{book.category?.name}}<br>
-              <strong>Disponible:</strong> {{book.available_quantity}}/{{book.quantity}}
+
             </p>
             <p class="card-text" *ngIf="book.description">{{book.description}}</p>
           </div>
           <div class="card-footer">
             <div class="d-flex justify-content-between align-items-center">
               <span class="badge" [class]="book.available_quantity > 0 ? 'bg-success' : 'bg-danger'">
-                {{book.available_quantity > 0 ? 'Disponible' : 'Indisponible'}}
+                <span *ngIf="!isAdmin()">{{book.available_quantity > 0 ? 'Disponible' : 'Indisponible'}}</span>
+                <span *ngIf="isAdmin()">{{book.available_quantity > 0 ? 'Disponible' : 'Indisponible'}} ({{book.available_quantity}}/{{book.quantity}})</span>
               </span>
               <div class="btn-group" *ngIf="!isAdmin()">
                 <button 
@@ -213,16 +263,36 @@ export class BooksComponent implements OnInit {
   showCategoryForm = false;
   newBook: Partial<Book> = {};
   newCategory: Partial<Category> = {};
+  currentUser: User | null = null;
+  userPhotoUrl: string = 'assets/default-avatar.svg';
+  unreadCount: number = 4;
 
   constructor(
     private apiService: ApiService,
     private bookService: BookService,
-    private borrowService: BorrowService
+    private borrowService: BorrowService,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
+    this.loadUserData();
     this.loadBooks();
     this.loadCategories();
+  }
+
+  loadUserData() {
+    // Charger depuis localStorage d'abord
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (storedUser.name) {
+      this.currentUser = storedUser;
+    }
+    
+    // Écouter les changements du service
+    this.authService.currentUser$.subscribe(user => {
+      if (user) {
+        this.currentUser = user;
+      }
+    });
   }
 
   loadBooks() {
@@ -320,5 +390,117 @@ export class BooksComponent implements OnInit {
   getUserStatus(): string {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     return user.status || 'pending';
+  }
+
+  hasUserPhoto(): boolean {
+    const photoUrl = this.getUserPhoto();
+    return photoUrl && photoUrl !== 'assets/default-avatar.svg' && photoUrl.trim() !== '';
+  }
+
+  getUserPhoto(): string {
+    const user = this.currentUser || JSON.parse(localStorage.getItem('user') || '{}');
+    
+    // 1. Photo du user actuel
+    if (user.photo_url && user.photo_url !== 'assets/default-avatar.svg') {
+      return user.photo_url;
+    }
+    
+    // 2. Photo stockée séparément
+    const storedPhoto = localStorage.getItem('userPhoto_' + user.email);
+    if (storedPhoto && storedPhoto !== 'assets/default-avatar.svg') {
+      return storedPhoto;
+    }
+    
+    // 3. Photo dans registeredUsers
+    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    const registeredUser = registeredUsers.find((u: any) => u.email === user.email);
+    if (registeredUser?.photo_url && registeredUser.photo_url !== 'assets/default-avatar.svg') {
+      return registeredUser.photo_url;
+    }
+    
+    return '';
+  }
+
+  getUserInitials(): string {
+    const user = this.currentUser || JSON.parse(localStorage.getItem('user') || '{}');
+    const name = user?.name || 'User';
+    
+    const initials = name
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase())
+      .slice(0, 2)
+      .join('');
+    
+    return initials || 'U';
+  }
+
+  onPhotoError(event: any) {
+    // Cacher l'image et afficher les initiales
+    event.target.style.display = 'none';
+    // Forcer le re-render pour afficher les initiales
+    setTimeout(() => {
+      const container = event.target.parentElement;
+      if (container) {
+        container.innerHTML = `
+          <div class="user-initials"
+               style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(45deg, #4B7688, #2E8B8B); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; border: 2px solid rgba(255,255,255,0.3);">
+            ${this.getUserInitials()}
+          </div>
+        `;
+      }
+    }, 10);
+  }
+
+  // Méthode pour forcer le rechargement de la photo
+  forceReloadPhoto() {
+    if (this.currentUser) {
+      // Recharger depuis toutes les sources
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const storedPhoto = localStorage.getItem('userPhoto_' + this.currentUser.email);
+      const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+      const registeredUser = registeredUsers.find((u: any) => u.email === this.currentUser?.email);
+      
+      const photoUrl = registeredUser?.photo_url || storedUser.photo_url || storedPhoto;
+      
+      if (photoUrl && photoUrl !== 'assets/default-avatar.svg') {
+        this.userPhotoUrl = photoUrl;
+        console.log('Photo rechargée:', photoUrl);
+      } else {
+        console.log('Aucune photo trouvée pour:', this.currentUser.email);
+      }
+    }
+  }
+
+  // Méthode pour ajouter une photo de test
+  addTestPhoto() {
+    // Essayer plusieurs URLs de test
+    const testPhotos = [
+      'https://ui-avatars.com/api/?name=' + (this.currentUser?.name || 'User') + '&background=4B7688&color=fff&size=40',
+      'https://via.placeholder.com/40x40/4B7688/FFFFFF?text=' + (this.currentUser?.name?.charAt(0) || 'U'),
+      'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"%3E%3Ccircle cx="20" cy="20" r="20" fill="%234B7688"/%3E%3Ctext x="20" y="26" text-anchor="middle" fill="white" font-size="14" font-family="Arial"%3E' + (this.currentUser?.name?.charAt(0) || 'U') + '%3C/text%3E%3C/svg%3E'
+    ];
+    
+    const testPhotoUrl = testPhotos[0]; // Utiliser la première option
+    
+    if (this.currentUser) {
+      console.log('Avant mise à jour - Photo actuelle:', this.userPhotoUrl);
+      
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      user.photo_url = testPhotoUrl;
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('userPhoto_' + this.currentUser.email, testPhotoUrl);
+      
+      // Forcer la mise à jour immédiate
+      this.userPhotoUrl = testPhotoUrl;
+      
+      console.log('Après mise à jour - Nouvelle photo:', this.userPhotoUrl);
+      console.log('LocalStorage user:', localStorage.getItem('user'));
+      console.log('LocalStorage photo:', localStorage.getItem('userPhoto_' + this.currentUser.email));
+      
+      // Mettre à jour le service auth aussi
+      this.authService.updateCurrentUser(user);
+      
+      alert('Photo mise à jour ! Vérifiez la console pour les détails.');
+    }
   }
 }

@@ -11,7 +11,7 @@ class User extends Authenticatable
     use HasFactory;
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'phone'
+        'name', 'email', 'password', 'role', 'phone', 'photo_url'
     ];
 
     protected $hidden = [

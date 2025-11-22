@@ -197,7 +197,6 @@ import { AuthService } from '../services/auth.service';
                   <h6 class="text-primary">Informations</h6>
                   <p><strong>Auteur:</strong> {{selectedBook.author}}</p>
                   <p><strong>Genre:</strong> <span class="badge" [style.background]="getGenreColor(selectedBook.genre)">{{selectedBook.genre}}</span></p>
-                  <p><strong>Disponibilité:</strong> {{selectedBook.available}}/{{selectedBook.stock}}</p>
                 </div>
               </div>
             </div>
