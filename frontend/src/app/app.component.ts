@@ -54,7 +54,7 @@ export class AppComponent implements OnInit {
 
   hasUserPhoto(): boolean {
     const photoUrl = this.getUserPhoto();
-    return photoUrl && photoUrl !== 'assets/default-avatar.png' && photoUrl.trim() !== '';
+    return !!(photoUrl && photoUrl !== 'assets/default-avatar.png' && photoUrl.trim() !== '');
   }
 
   getUserPhoto(): string {
